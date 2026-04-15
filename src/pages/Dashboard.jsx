@@ -8,30 +8,33 @@ export default function Dashboard() {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // 🔄 Fetch employees
   async function fetchEmployees() {
     const snap = await getDocs(collection(db, "employees"));
 
     const data = snap.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
+      ...doc.data(),
+      docId: doc.id   // 🔥 FIXED
     }));
 
     setEmployees(data);
   }
 
   useEffect(() => {
-    fetchEmployees(); // 🔥 only fetch, no auto upload
+    fetchEmployees();
   }, []);
 
-  // 🔥 Upload button handler
   async function handleUpload() {
     setLoading(true);
 
-    await uploadEmployees(); // safe upload (no duplicates)
-    await fetchEmployees();      // refresh UI
-
-    setLoading(false);
+    try {
+      await uploadEmployees();
+      await fetchEmployees();
+    } catch (error) {
+      console.error("Upload failed:", error);
+      alert("Employee upload failed. Check the console for details.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   const total = employees.length;
@@ -39,14 +42,12 @@ export default function Dashboard() {
 
   return (
     <div className="container mt-4">
-      {/* 🔥 HEADER + BUTTON */}
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h2 className="mb-0">AI Performance Dashboard</h2>
 
        
       </div>
 
-      {/* Summary */}
       <div className="row mb-4">
         <div className="col-md-6">
           <div className="card p-3 text-center">
@@ -63,13 +64,12 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Employee Cards */}
       <div className="row">
         {employees.length === 0 ? (
           <p>No employees found. Click "Add Employees".</p>
         ) : (
           employees.map(emp => (
-            <div className="col-md-4" key={emp.id}>
+            <div className="col-md-4" key={emp.docId}>
               <EmployeeCard employee={emp} />
             </div>
           ))
